@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Translators.Application.Contracts.Users;
+using Translators.Application.Security;
 using Translators.EntityFrameworkCore.DbContexts;
 
 namespace Translators.Application.Users;
@@ -7,10 +8,12 @@ namespace Translators.Application.Users;
 public class LoginHandler
 {
     private readonly TranslatorDbContext _context;
+    private readonly JwtTokenService _jwtTokenService;
 
-    public LoginHandler(TranslatorDbContext context)
+    public LoginHandler(TranslatorDbContext context, JwtTokenService jwtTokenService)
     {
         _context = context;
+        _jwtTokenService = jwtTokenService;
     }
 
     public async Task<LoginUserResponseContract> HandleAsync(LoginUserRequestContract request, CancellationToken cancellationToken = default)
@@ -31,7 +34,8 @@ public class LoginHandler
         {
             UserId = user.Id,
             Name = user.Name,
-            Email = user.Email
+            Email = user.Email,
+            Token = _jwtTokenService.CreateToken(user)
         };
     }
 }

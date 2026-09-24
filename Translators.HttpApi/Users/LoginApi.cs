@@ -1,6 +1,7 @@
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using Translators.Application.Contracts.Users;
+using Translators.Application.Security;
 using Translators.Application.Users;
 using Translators.EntityFrameworkCore.DbContexts;
 
@@ -9,10 +10,12 @@ namespace Translators.HttpApi.Users;
 public class LoginApi : Endpoint<LoginUserRequestContract, LoginUserResponseContract>
 {
     private readonly TranslatorDbContext _context;
+    private readonly JwtTokenService _jwtTokenService;
 
-    public LoginApi(TranslatorDbContext context)
+    public LoginApi(TranslatorDbContext context, JwtTokenService jwtTokenService)
     {
         _context = context;
+        _jwtTokenService = jwtTokenService;
     }
 
     public override void Configure()
@@ -22,7 +25,7 @@ public class LoginApi : Endpoint<LoginUserRequestContract, LoginUserResponseCont
         Summary(s =>
         {
             s.Summary = "Log in as an existing user";
-            s.Description = "Validates the user email and password.";
+            s.Description = "Validates the user email and password and returns a JWT token.";
         });
     }
 
@@ -30,7 +33,7 @@ public class LoginApi : Endpoint<LoginUserRequestContract, LoginUserResponseCont
     {
         try
         {
-            var handler = new LoginHandler(_context);
+            var handler = new LoginHandler(_context, _jwtTokenService);
             var result = await handler.HandleAsync(req, ct);
             await SendOkAsync(result, ct);
         }
