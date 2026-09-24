@@ -11,6 +11,7 @@ public partial class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
         builder.Services.AddAuthorization();
         builder.Services.AddFastEndpoints(options =>
@@ -39,13 +40,19 @@ public partial class Program
 
         var app = builder.Build();
 
-        if (app.Environment.IsDevelopment())
+        if (!builder.Environment.IsEnvironment("Testing"))
+        {
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<TranslatorDbContext>();
+            dbContext.Database.EnsureCreated();
+        }
+
+        if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
 
-        app.UseHttpsRedirection();
         app.UseAuthorization();
         app.UseFastEndpoints();
 
