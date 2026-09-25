@@ -18,7 +18,10 @@ public class LoginHandler
 
     public async Task<LoginUserResponseContract> HandleAsync(LoginUserRequestContract request, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == request.Email.Trim(), cancellationToken);
+        var user = await _context.Users
+            .Include(x => x.Role)
+            .FirstOrDefaultAsync(x => x.Email == request.Email.Trim(), cancellationToken);
+
         if (user is null)
         {
             throw new UnauthorizedAccessException("Invalid email or password.");

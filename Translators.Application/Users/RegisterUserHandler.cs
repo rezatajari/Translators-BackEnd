@@ -31,12 +31,16 @@ public class RegisterUserHandler
             throw new InvalidOperationException("A user with this email already exists.");
         }
 
+        var userRole = await EnsureRoleAsync(RoleNames.User, "GetByIdUserHandler,PaginatedUserHandler,LookupUserHandler", "Default registered user role.", cancellationToken);
+
         var entity = new UserEntity
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
             Email = normalizedEmail,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            RoleId = userRole.Id,
+            Role = userRole
         };
 
         _context.Users.Add(entity);
@@ -48,5 +52,28 @@ public class RegisterUserHandler
             Name = entity.Name,
             Email = entity.Email
         };
+    }
+
+    private async Task<RoleEntity> EnsureRoleAsync(string roleName, string permissions, string description, CancellationToken cancellationToken)
+    {
+        var role = await _context.Roles.FirstOrDefaultAsync(x => x.Name == roleName, cancellationToken);
+        if (role is not null)
+        {
+            return role;
+        }
+
+        role = new RoleEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = roleName,
+            Description = description,
+            Permissions = permissions,
+            IsSystemRole = true
+        };
+
+        _context.Roles.Add(role);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return role;
     }
 }

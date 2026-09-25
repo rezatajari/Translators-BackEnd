@@ -1,7 +1,83 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Admin Dashboard</PageTitle>
 
-<h1>Hello, world!</h1>
+<MudStack Row="false" Spacing="3">
+    <MudText Typo="Typo.h4">Admin dashboard</MudText>
+    <MudText Typo="Typo.subtitle1">Users and roles overview</MudText>
 
-Welcome to your new app.
+    <MudGrid>
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-3">Users</MudText>
+                <MudTable Items="Users" Dense="true" Hover="true" Striped="true">
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Email</MudTh>
+                        <MudTh>Role</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Email">@context.Email</MudTd>
+                        <MudTd DataLabel="Role">
+                            <MudChip T="string" Color="@(context.Role == "Admin" ? Color.Warning : Color.Primary)" Size="Size.Small">@context.Role</MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Size="Size.Small">Active</MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-3">Roles</MudText>
+                <MudList T="string">
+                    @foreach (var role in Roles)
+                    {
+                        <MudListItem>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                <div>
+                                    <MudText Typo="Typo.subtitle2">@role.Name</MudText>
+                                    <MudText Typo="Typo.caption">@role.Description</MudText>
+                                </div>
+                                <MudChip T="string" Color="@(role.Name == "Admin" ? Color.Warning : Color.Info)" Size="Size.Small">@role.Permissions</MudChip>
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private sealed class UserRow
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+    }
+
+    private sealed class RoleRow
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Permissions { get; set; } = string.Empty;
+    }
+
+    private readonly List<UserRow> Users =
+    [
+        new() { Name = "Ahmad Admin", Email = "admin@translators.local", Role = "Admin" },
+        new() { Name = "Sara User", Email = "sara@translators.local", Role = "User" },
+        new() { Name = "Reza User", Email = "reza@translators.local", Role = "User" }
+    ];
+
+    private readonly List<RoleRow> Roles =
+    [
+        new() { Name = "Admin", Description = "Full access to every API", Permissions = "*" },
+        new() { Name = "User", Description = "Only read APIs", Permissions = "GetById, Paginated, Lookup" }
+    ];
+}

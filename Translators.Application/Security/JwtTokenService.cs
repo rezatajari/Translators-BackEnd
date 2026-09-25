@@ -21,6 +21,9 @@ public class JwtTokenService
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
         var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
+        var roleName = user.Role?.Name ?? RoleNames.User;
+        var permissions = user.Role?.Permissions ?? "GetByIdUserHandler,PaginatedUserHandler,LookupUserHandler";
+
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -29,6 +32,8 @@ public class JwtTokenService
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.Name),
+            new Claim(ClaimTypes.Role, roleName),
+            new Claim("permissions", permissions),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

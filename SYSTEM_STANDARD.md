@@ -19,6 +19,8 @@
 ### Domain
 - Keep business entities and domain rules.
 - Entity names: `UserEntity`, `RoleEntity`, etc.
+- Default built-in roles: `Admin` (full access, `Permissions = "*"`) and `User` (read-only access: `GetByIdUserHandler,PaginatedUserHandler,LookupUserHandler`).
+- User entities must include `RoleId` and a navigation to `RoleEntity` to support user-role queries and JWT role claims.
 - Files are placed under `Translators.Domain/<FeatureName>/`
 
 ### Application
@@ -96,6 +98,9 @@ Examples:
 
 - Login (`POST /api/users/login`) is anonymous and returns a JWT in `LoginUserResponseContract.Token`.
 - Register (`POST /api/users/register`) is anonymous.
+- Built-in role checks are modeled by `RoleEntity.HasAccess(string apiHandlerName)` and default permissions are assigned on registration.
+- Admin role automatically has access to every API (`Permissions = "*"`).
+- Standard user role is read-only by default and can access `GetByIdUserHandler`, `PaginatedUserHandler`, and `LookupUserHandler`.
 - Protected endpoints use the Bearer JWT scheme (`AuthSchemes("Bearer")`).
 - Health (`GET /api/health`) requires a valid JWT and returns the authenticated user when the token is valid.
 - JWT options: `Jwt:Issuer`, `Jwt:Audience`, `Jwt:SigningKey`, `Jwt:ExpirationMinutes`.
