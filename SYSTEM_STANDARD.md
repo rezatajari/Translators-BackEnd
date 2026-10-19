@@ -148,7 +148,21 @@ Examples:
 - App listens on `http://0.0.0.0:5000` (Swagger: `http://<server-ip>:5000/swagger`). There is no HTTP listener on port 80.
 - An older unit `translators.service` used `/usr/bin/dotnet /root/translators-app/Translators.Host.dll` on the same port 5000. Publish must stop/disable that unit and free port 5000 before starting `translators.api`, otherwise the new process ABRTs with address-already-in-use and the browser keeps serving the old app.
 
-## 9. Operational rule
+## 9. Panel (Blazor WebAssembly)
+
+- `Translators.Panel` talks to the API **only** through the NSwag generated client in `Translators.Panel/Connected Services/Translators.GeneratedServices/OpenAPI.cs`.
+- Never hand-write API calls in the panel (no `HttpClient`, `PostAsJsonAsync`, `ReadFromJsonAsync`, or per-endpoint wrapper services). Pages inject the generated `Client` and call its `Api...Async` methods.
+- The panel must not reference `Translators.Application.Contracts` (or any other server-side project). DTOs come from the generated client; using server contracts is what allowed the hand-written client to exist.
+- Generated namespace is `Translators.GeneratedServices`, not `Translators.Panel.Translators.GeneratedServices`. Nesting it under `Translators.Panel` creates a `Translators.Panel.Translators` namespace that shadows the root `Translators` namespace and breaks every `Translators.Panel.*` using directive in the project.
+- Generation is part of the build (`OpenApiReference` item in `Translators.Panel.csproj`, generator `NSwagCSharp` from `NSwag.ApiDescription.Client`):
+  - Target `RefreshPanelOpenApiSpec` downloads the live spec from `$(PanelOpenApiUrl)` (default `http://localhost:5000/swagger/v1/swagger.json`) before generation, so the panel client always matches the running API. The API must be reachable, otherwise the panel build fails.
+  - Offline build from the checked-in spec: `dotnet build -p:PanelOpenApiUrl=`.
+  - `Translators.Panel/OpenAPIs/swagger.json` is the checked-in copy of that spec and is refreshed automatically; it is only replaced when the API surface actually changed, so unchanged builds do not regenerate and recompile the panel.
+  - Do not regenerate through the Unchase Visual Studio extension (`ConnectedService.json`, `OpenAPI.nswag`); those files are kept only as a reference and would reset the namespace.
+- Auth in the panel: `AuthSession` holds the generated `LoginUserResponseContract`; `AuthenticationHeaderHandler` (a `DelegatingHandler`) adds the bearer token and signs the session out on 401.
+- Request contracts that are bound from the query string must carry the FastEndpoints binding attribute (for example `[QueryParam]` on `GetByIdUserRequestContract.Guid`), otherwise Swagger documents a request body for a GET and the generated client method is unusable.
+
+## 10. Operational rule
 
 - PostgreSQL is configured in code for production; tests can override the database with InMemory for reliable execution without a local database service.
 - Swagger is enabled for endpoint testing in development and production.

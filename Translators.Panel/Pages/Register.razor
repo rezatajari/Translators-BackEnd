@@ -1,6 +1,6 @@
 @page "/register"
 @layout AuthLayout
-@inject TranslatorsApiClient Api
+@inject Client Api
 @inject NavigationManager Navigation
 
 <PageTitle>ثبت‌نام</PageTitle>
@@ -44,13 +44,17 @@
         _success = null;
         try
         {
-            var result = await Api.RegisterAsync(new RegisterUserRequestContract
+            var result = await Api.ApiUsersRegisterAsync(new RegisterUserRequestContract
             {
                 Name = _name,
                 Email = _email,
                 Password = _password
             });
-            _success = result is null ? "ثبت‌نام انجام نشد." : "ثبت‌نام با موفقیت انجام شد. اکنون وارد شوید.";
+            _success = $"{result.Name} عزیز، ثبت‌نام با موفقیت انجام شد. اکنون وارد شوید.";
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.StatusCode is 400 ? "این ایمیل قبلاً ثبت شده است." : ex.Message;
         }
         catch (Exception ex)
         {

@@ -1,6 +1,6 @@
 @page "/users"
 @layout MainLayout
-@inject TranslatorsApiClient Api
+@inject Client Api
 @inject AuthSession Session
 @inject NavigationManager Navigation
 
@@ -64,10 +64,23 @@
         _error = null;
         try
         {
-            var result = await Api.GetUsersAsync(1, 100, _search);
+            var result = await Api.ApiUsersPaginatedAsync(new PaginatedUsersRequestContract
+            {
+                PageNumber = 1,
+                PageSize = 100,
+                SearchText = _search
+            });
             _users.Clear();
-            _users.AddRange(result.Items);
+            if (result.Items is not null)
+            {
+                _users.AddRange(result.Items);
+            }
+
             _totalCount = result.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.StatusCode is 401 or 403 ? "برای مشاهده‌ی کاربران دسترسی ندارید." : ex.Message;
         }
         catch (Exception ex)
         {

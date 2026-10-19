@@ -1,7 +1,10 @@
+using FastEndpoints;
+
 namespace Translators.Application.Contracts.Users;
 
 public record GetByIdUserRequestContract
 {
+    [QueryParam]
     public Guid Guid { get; init; }
 }
 

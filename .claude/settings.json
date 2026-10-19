@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($p=\"$env:USERPROFILE\\\\.nuget\\\\packages\"; Get-ChildItem $p -Directory | Where-Object {$_.Name -match 'nswag|apidescription'} | Select-Object -ExpandProperty Name; \"--- nswag.apidescription.client ---\"; Get-ChildItem \"$p\\\\nswag.apidescription.client\\\\14.2.0\" -Recurse -Depth 2 | Select-Object -ExpandProperty FullName)"
+    ]
+  }
+}

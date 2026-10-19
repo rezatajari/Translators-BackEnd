@@ -5,4 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Binding attributes such as [QueryParam] on request contracts keep Swagger and the generated panel client in sync. -->
+    <PackageReference Include="FastEndpoints" Version="5.35.0" />
+  </ItemGroup>
+
 </Project>

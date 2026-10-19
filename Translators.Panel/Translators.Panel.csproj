@@ -4,11 +4,10 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Live API the panel client is generated from. Build offline with: dotnet build -p:PanelOpenApiUrl= -->
+    <PanelOpenApiUrl Condition="'$(PanelOpenApiUrl)' == ''">http://localhost:5000/swagger/v1/swagger.json</PanelOpenApiUrl>
+    <PanelOpenApiSpec>OpenAPIs\swagger.json</PanelOpenApiSpec>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Translators.Application.Contracts\Translators.Application.Contracts.csproj" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.7" />
@@ -20,11 +19,39 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Connected Services\" />
+    <None Include="$(PanelOpenApiSpec)" />
   </ItemGroup>
 
+  <!--
+    The panel talks to the API only through the generated client. The namespace must stay Translators.GeneratedServices:
+    nesting it under Translators.Panel would shadow the root Translators namespace and break every Translators.Panel.*
+    using directive inside this project. Do not regenerate through the Unchase Visual Studio extension, it resets the
+    namespace to the old value.
+  -->
   <ItemGroup>
-    <None Include="OpenAPIs\swagger.json" />
+    <OpenApiReference Include="$(PanelOpenApiSpec)"
+                      Namespace="Translators.GeneratedServices"
+                      ClassName="Client"
+                      CodeGenerator="NSwagCSharp"
+                      OutputPath="Connected Services\Translators.GeneratedServices\OpenAPI.cs"
+                      Options="/classStyle:Poco /jsonLibrary:NewtonsoftJson /dateTimeType:System.DateTimeOffset /injectHttpClient:true /generateClientInterfaces:false /useBaseUrl:true" />
   </ItemGroup>
+
+  <!-- Fetches the spec of the running API before generation. The checked-in spec is only replaced when the API surface actually changed, so unchanged builds skip regeneration and the panel is not recompiled for nothing. -->
+  <Target Name="RefreshPanelOpenApiSpec" BeforeTargets="_GetMetadataForOpenApiReferences" Condition="'$(PanelOpenApiUrl)' != ''">
+    <DownloadFile SourceUrl="$(PanelOpenApiUrl)" DestinationFolder="$(IntermediateOutputPath)openapi" DestinationFileName="swagger.json" Retries="2" />
+    <GetFileHash Files="$(IntermediateOutputPath)openapi\swagger.json" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="_DownloadedSpec" />
+    </GetFileHash>
+    <GetFileHash Files="$(PanelOpenApiSpec)" Algorithm="SHA256" Condition="Exists('$(PanelOpenApiSpec)')">
+      <Output TaskParameter="Items" ItemName="_CurrentSpec" />
+    </GetFileHash>
+    <PropertyGroup>
+      <_DownloadedSpecHash>%(_DownloadedSpec.FileHash)</_DownloadedSpecHash>
+      <_CurrentSpecHash Condition="'@(_CurrentSpec)' != ''">%(_CurrentSpec.FileHash)</_CurrentSpecHash>
+    </PropertyGroup>
+    <Message Importance="normal" Text="Panel API spec is up to date, skipping regeneration." Condition="'$(_DownloadedSpecHash)' == '$(_CurrentSpecHash)'" />
+    <Copy SourceFiles="$(IntermediateOutputPath)openapi\swagger.json" DestinationFiles="$(PanelOpenApiSpec)" Condition="'$(_DownloadedSpecHash)' != '$(_CurrentSpecHash)'" />
+  </Target>
 
 </Project>
