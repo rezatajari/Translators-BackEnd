@@ -17,7 +17,7 @@ public class LookupUsersApi : Endpoint<LookupUserRequestContract, LookupUsersRes
 
     public override void Configure()
     {
-        Get("/api/users/lookup");
+        Post("/api/users/Lookup");
         AllowAnonymous();
     }
 

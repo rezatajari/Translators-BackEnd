@@ -44,6 +44,13 @@ public partial class Program
             });
 
         builder.Services.AddAuthorization();
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("Panel", policy => policy
+                .AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod());
+        });
         builder.Services.AddFastEndpoints(options =>
         {
             options.Assemblies = new[]
@@ -105,6 +112,7 @@ public partial class Program
         }
 
         app.UseAuthentication();
+        app.UseCors("Panel");
         app.UseAuthorization();
         app.UseFastEndpoints();
 

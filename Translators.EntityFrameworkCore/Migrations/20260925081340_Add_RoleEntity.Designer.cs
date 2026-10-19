@@ -12,8 +12,8 @@ using Translators.EntityFrameworkCore.DbContexts;
 namespace Translators.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(TranslatorDbContext))]
-    [Migration("20260925072058_AddRoleEntity")]
-    partial class AddRoleEntity
+    [Migration("20260925081340_Add_RoleEntity")]
+    partial class Add_RoleEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -64,8 +64,8 @@ namespace Translators.EntityFrameworkCore.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTime(2026, 9, 25, 7, 20, 56, 442, DateTimeKind.Utc).AddTicks(7421),
+                            Id = new Guid("d5c5a1f4-8254-4c1e-811d-854d2eb4b831"),
+                            CreatedAt = new DateTime(2026, 9, 25, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "System administrator with full access.",
                             IsSystemRole = true,
                             Name = "Admin",
@@ -73,8 +73,8 @@ namespace Translators.EntityFrameworkCore.Migrations
                         },
                         new
                         {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTime(2026, 9, 25, 7, 20, 56, 442, DateTimeKind.Utc).AddTicks(7759),
+                            Id = new Guid("5a5425df-7563-408d-b2a0-3aefda45cdef"),
+                            CreatedAt = new DateTime(2026, 9, 25, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Default registered user with read-only access.",
                             IsSystemRole = true,
                             Name = "User",

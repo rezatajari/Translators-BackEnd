@@ -1,0 +1,81 @@
+@page "/users"
+@layout MainLayout
+@inject TranslatorsApiClient Api
+@inject AuthSession Session
+@inject NavigationManager Navigation
+
+<PageTitle>کاربران</PageTitle>
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudText Typo="Typo.h4">کاربران</MudText>
+        <MudTextField T="string" Label="جست‌وجو" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" @bind-Value="_search" Immediate="true" OnKeyDown="SearchOnEnter" />
+    </MudStack>
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    }
+    else
+    {
+        <MudDataGrid T="PaginatedUserItemContract" Items="_users" Dense="true" Hover="true" Striped="true" Filterable="true" RowsPerPage="10">
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="نام" />
+                <PropertyColumn Property="x => x.Email" Title="ایمیل" />
+                <PropertyColumn Property="x => x.RoleName" Title="نقش" />
+                <PropertyColumn Property="x => x.UserId" Title="شناسه" />
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="PaginatedUserItemContract" />
+            </PagerContent>
+        </MudDataGrid>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">تعداد کل: @_totalCount</MudText>
+    }
+</MudStack>
+
+@code {
+    private readonly List<PaginatedUserItemContract> _users = new();
+    private string? _search;
+    private string? _error;
+    private int _totalCount;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadUsersAsync();
+    }
+
+    private async Task SearchOnEnter(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter") await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var result = await Api.GetUsersAsync(1, 100, _search);
+            _users.Clear();
+            _users.AddRange(result.Items);
+            _totalCount = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

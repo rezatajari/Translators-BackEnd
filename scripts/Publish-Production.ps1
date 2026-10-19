@@ -15,7 +15,9 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $secretsDir = Join-Path $repoRoot "secrets"
 $projectPath = Join-Path $repoRoot "Translators.Host\Translators.Host.csproj"
+$panelProjectPath = Join-Path $repoRoot "Translators.Panel\Translators.Panel.csproj"
 $publishDir = Join-Path $repoRoot "artifacts\linux-x64"
+$panelPublishDir = Join-Path $repoRoot "artifacts\panel"
 
 function Write-Step {
     param([string]$Message)
@@ -93,6 +95,8 @@ $sshUser = Read-SecretFile "ssh.user"
 $sshPassword = Read-SecretFile "ssh.password"
 $remotePath = Read-SecretFile "remote.path"
 $serviceName = Read-SecretFile "service.name"
+$panelServiceName = if (Test-Path -LiteralPath (Join-Path $secretsDir "panel.service.name")) { Read-SecretFile "panel.service.name" } else { "translators.panel" }
+$panelPort = if (Test-Path -LiteralPath (Join-Path $secretsDir "panel.port")) { Read-SecretFile "panel.port" } else { "5001" }
 $connectionString = Read-SecretFile "db.connection"
 $jwtIssuer = Read-SecretFile "jwt.issuer"
 $jwtAudience = Read-SecretFile "jwt.audience"
@@ -128,6 +132,23 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Step "Publish output ready at $publishDir"
+
+Write-Step "Publishing Translators.Panel to static assets for the admin dashboard..."
+if (Test-Path -LiteralPath $panelPublishDir) {
+    Remove-Item -LiteralPath $panelPublishDir -Recurse -Force
+}
+
+dotnet publish $panelProjectPath `
+    -c Release `
+    --no-restore `
+    -o $panelPublishDir `
+    --verbosity minimal
+
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish for Translators.Panel failed with exit code $LASTEXITCODE"
+}
+
+Write-Step "Panel publish output ready at $panelPublishDir"
 
 $productionSettings = @{
     ConnectionStrings = @{
@@ -189,16 +210,39 @@ WantedBy=multi-user.target
     [System.IO.File]::WriteAllText($unitFileLocal, $unitContent + "`n", $utf8NoBom)
 
     $remoteUnitPath = "/tmp/$serviceName.service"
-    Write-Step "Preparing remote directory and systemd unit..."
+    $panelUnitFileLocal = Join-Path $artifactsDir "$panelServiceName.service"
+    $panelUnitContent = Normalize-BashScript @"
+[Unit]
+Description=Translators Admin Panel
+After=network.target
+
+[Service]
+WorkingDirectory=$remotePath
+ExecStart=/usr/bin/python3 -m http.server $panelPort --bind 0.0.0.0 --directory /opt/translators-panel/wwwroot
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+"@
+    [System.IO.File]::WriteAllText($panelUnitFileLocal, $panelUnitContent + "`n", $utf8NoBom)
+
+    Write-Step "Preparing remote directories and systemd units..."
     Send-RemoteFile -SftpSession $sftpSession -LocalPath $unitFileLocal -RemoteDirectory "/tmp"
+    Send-RemoteFile -SftpSession $sftpSession -LocalPath $panelUnitFileLocal -RemoteDirectory "/tmp"
 
     $setupScript = @"
 set -euo pipefail
 mkdir -p '$remotePath'
+rm -rf '/opt/translators-panel'
+mkdir -p '/opt/translators-panel/wwwroot'
 install -m 644 '$remoteUnitPath' '/etc/systemd/system/$serviceName.service'
+install -m 644 '/tmp/$panelServiceName.service' '/etc/systemd/system/$panelServiceName.service'
 systemctl daemon-reload
 systemctl enable '$serviceName'
+systemctl enable '$panelServiceName'
 systemctl stop '$serviceName' || true
+systemctl stop '$panelServiceName' || true
 systemctl stop translators.service || true
 systemctl disable translators.service || true
 if command -v ss >/dev/null 2>&1; then
@@ -209,6 +253,16 @@ if command -v ss >/dev/null 2>&1; then
   sleep 1
   old_pids=`$(ss -lptn 'sport = :5000' | sed -n 's/.*pid=\([0-9]*\).*/\1/p' | sort -u)
   for pid in `$old_pids; do
+    kill -KILL `$pid || true
+  done
+
+  old_panel_pids=`$(ss -lptn 'sport = :$panelPort' | sed -n 's/.*pid=\([0-9]*\).*/\1/p' | sort -u)
+  for pid in `$old_panel_pids; do
+    kill -TERM `$pid || true
+  done
+  sleep 1
+  old_panel_pids=`$(ss -lptn 'sport = :$panelPort' | sed -n 's/.*pid=\([0-9]*\).*/\1/p' | sort -u)
+  for pid in `$old_panel_pids; do
     kill -KILL `$pid || true
   done
 fi
@@ -224,45 +278,73 @@ fi
         Remove-Item -LiteralPath $archivePath -Force
     }
 
-    Write-Step "Packing publish output..."
+    $panelArchivePath = Join-Path $repoRoot "artifacts\translators-panel.tar.gz"
+    if (Test-Path -LiteralPath $panelArchivePath) {
+        Remove-Item -LiteralPath $panelArchivePath -Force
+    }
+
+    Write-Step "Packing API publish output..."
     & tar -czf $archivePath -C $publishDir .
     if ($LASTEXITCODE -ne 0) {
-        throw "Failed to create publish archive."
+        throw "Failed to create API publish archive."
+    }
+
+    Write-Step "Packing panel publish output..."
+    & tar -czf $panelArchivePath -C $panelPublishDir .
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to create panel publish archive."
     }
 
     $remoteArchive = "/tmp/translators-linux-x64.tar.gz"
-    Write-Step "Uploading archive to $sshHost ..."
+    $remotePanelArchive = "/tmp/translators-panel.tar.gz"
+    Write-Step "Uploading API archive to $sshHost ..."
     Send-RemoteFile -SftpSession $sftpSession -LocalPath $archivePath -RemoteDirectory "/tmp"
+    Write-Step "Uploading panel archive to $sshHost ..."
+    Send-RemoteFile -SftpSession $sftpSession -LocalPath $panelArchivePath -RemoteDirectory "/tmp"
 
     $finishScript = @"
 set -euo pipefail
 tar -xzf '$remoteArchive' -C '$remotePath'
 rm -f '$remoteArchive'
+rm -rf '/opt/translators-panel'
+mkdir -p '/opt/translators-panel'
+tar -xzf '$remotePanelArchive' -C '/opt/translators-panel'
+rm -f '$remotePanelArchive'
+test -f '/opt/translators-panel/wwwroot/index.html'
 chmod +x '$remotePath/Translators.Host'
+find '/opt/translators-panel' -type f -exec chmod 644 {} +
+find '/opt/translators-panel' -type d -exec chmod 755 {} +
 systemctl daemon-reload
 systemctl reset-failed '$serviceName' || true
+systemctl reset-failed '$panelServiceName' || true
 systemctl restart '$serviceName'
+systemctl restart '$panelServiceName'
 for i in 1 2 3 4 5 6 7 8 9 10; do
-  if systemctl is-active --quiet '$serviceName'; then
+  if systemctl is-active --quiet '$serviceName' && systemctl is-active --quiet '$panelServiceName'; then
     break
   fi
   sleep 1
 done
 systemctl --no-pager --full status '$serviceName'
+systemctl --no-pager --full status '$panelServiceName'
 if ! systemctl is-active --quiet '$serviceName'; then
   journalctl -u '$serviceName' -n 40 --no-pager
   exit 1
 fi
+if ! systemctl is-active --quiet '$panelServiceName'; then
+  journalctl -u '$panelServiceName' -n 40 --no-pager
+  exit 1
+fi
 "@
 
-    Write-Step "Restarting $serviceName ..."
+    Write-Step "Restarting $serviceName and $panelServiceName ..."
     $finishResult = Invoke-RemoteBash -SshSession $session -Script $finishScript
     if ($finishResult.ExitStatus -ne 0) {
         throw "Remote restart failed: $($finishResult.Error)$($finishResult.Output)"
     }
 
     Write-Host ($finishResult.Output -join [Environment]::NewLine)
-    Write-Step "Publish completed."
+    Write-Step "Publish completed. API is on http://<server-ip>:5000 and admin panel is on http://<server-ip>:$panelPort"
 }
 finally {
     if ($sftpSession) {

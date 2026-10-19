@@ -1,0 +1,64 @@
+@page "/register"
+@layout AuthLayout
+@inject TranslatorsApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>ثبت‌نام</PageTitle>
+<MudPaper Class="pa-8 auth-card" Elevation="4">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h4">ساخت حساب کاربری</MudText>
+        <MudForm @ref="_form">
+            <MudTextField T="string" Label="نام" @bind-Value="_name" Required="true" />
+            <MudTextField T="string" Label="ایمیل" @bind-Value="_email" Required="true" InputType="InputType.Email" />
+            <MudTextField T="string" Label="رمز عبور" @bind-Value="_password" Required="true" InputType="InputType.Password" />
+        </MudForm>
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        }
+        @if (!string.IsNullOrWhiteSpace(_success))
+        {
+            <MudAlert Severity="Severity.Success">@_success</MudAlert>
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="@_busy" OnClick="RegisterAsync">ثبت‌نام</MudButton>
+        <MudButton Variant="Variant.Text" Href="/login">بازگشت به ورود</MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private MudForm? _form;
+    private string _name = string.Empty;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string? _error;
+    private string? _success;
+    private bool _busy;
+
+    private async Task RegisterAsync()
+    {
+        await _form!.Validate();
+        if (!_form.IsValid) return;
+
+        _busy = true;
+        _error = null;
+        _success = null;
+        try
+        {
+            var result = await Api.RegisterAsync(new RegisterUserRequestContract
+            {
+                Name = _name,
+                Email = _email,
+                Password = _password
+            });
+            _success = result is null ? "ثبت‌نام انجام نشد." : "ثبت‌نام با موفقیت انجام شد. اکنون وارد شوید.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

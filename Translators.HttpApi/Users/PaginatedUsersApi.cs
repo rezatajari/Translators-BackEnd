@@ -17,7 +17,7 @@ public class PaginatedUsersApi : Endpoint<PaginatedUsersRequestContract, Paginat
 
     public override void Configure()
     {
-        Get("/api/users");
+        Post("/api/users/Paginated");
         AllowAnonymous();
     }
 

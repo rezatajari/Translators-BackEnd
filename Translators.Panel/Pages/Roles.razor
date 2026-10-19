@@ -1,0 +1,38 @@
+@page "/roles"
+@layout MainLayout
+@inject AuthSession Session
+@inject NavigationManager Navigation
+
+<PageTitle>نقش‌ها</PageTitle>
+@if (!Session.IsAuthenticated)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4">نقش‌ها و دسترسی‌ها</MudText>
+        <MudDataGrid T="RoleRow" Items="_roles" Dense="true" Hover="true" Striped="true">
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="نقش" />
+                <PropertyColumn Property="x => x.Description" Title="توضیح" />
+                <PropertyColumn Property="x => x.Permissions" Title="دسترسی‌ها" />
+            </Columns>
+        </MudDataGrid>
+    </MudStack>
+}
+
+@code {
+    private readonly List<RoleRow> _roles =
+    [
+        new("Admin", "دسترسی کامل به سامانه", "همه endpointها"),
+        new("User", "دسترسی خواندن اطلاعات", "GetById, Paginated, Lookup")
+    ];
+
+    protected override void OnInitialized()
+    {
+        if (!Session.IsAuthenticated) Navigation.NavigateTo("/login");
+    }
+
+    private sealed record RoleRow(string Name, string Description, string Permissions);
+}

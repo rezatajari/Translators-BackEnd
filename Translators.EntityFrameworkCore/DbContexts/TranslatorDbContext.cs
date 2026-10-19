@@ -17,8 +17,8 @@ public class TranslatorDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        var adminRoleId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var userRoleId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var adminRoleId = Guid.Parse("d5c5a1f4-8254-4c1e-811d-854d2eb4b831");
+        var userRoleId = Guid.Parse("5a5425df-7563-408d-b2a0-3aefda45cdef");
 
         modelBuilder.Entity<RoleEntity>(entity =>
         {
@@ -50,7 +50,7 @@ public class TranslatorDbContext : DbContext
                 Description = "System administrator with full access.",
                 Permissions = "*",
                 IsSystemRole = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = new DateTime(2026,09,25,0,0,0, DateTimeKind.Utc)
             },
             new RoleEntity
             {
@@ -59,7 +59,7 @@ public class TranslatorDbContext : DbContext
                 Description = "Default registered user with read-only access.",
                 Permissions = "GetByIdUserHandler,PaginatedUserHandler,LookupUserHandler",
                 IsSystemRole = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = new DateTime(2026, 09, 25, 0, 0, 0, DateTimeKind.Utc)
             });
 
         modelBuilder.Entity<UserEntity>(entity =>

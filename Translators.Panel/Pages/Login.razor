@@ -1,0 +1,59 @@
+@page "/login"
+@layout AuthLayout
+@inject TranslatorsApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>ورود</PageTitle>
+<MudPaper Class="pa-8 auth-card" Elevation="4">
+    <MudStack Spacing="2">
+        <MudIcon Icon="@Icons.Material.Filled.Translate" Color="Color.Primary" Size="Size.Large" />
+        <MudText Typo="Typo.h4">ورود به پنل</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">به حساب مدیریتی خود وارد شوید.</MudText>
+        <MudForm @ref="_form">
+            <MudTextField T="string" Label="ایمیل" @bind-Value="_email" Required="true" InputType="InputType.Email" />
+            <MudTextField T="string" Label="رمز عبور" @bind-Value="_password" Required="true" InputType="InputType.Password" />
+        </MudForm>
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="@_busy" OnClick="LoginAsync">ورود</MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Secondary" Href="/register">ساخت حساب جدید</MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private MudForm? _form;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string? _error;
+    private bool _busy;
+
+    private async Task LoginAsync()
+    {
+        await _form!.Validate();
+        if (!_form.IsValid) return;
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            var result = await Api.LoginAsync(new LoginUserRequestContract { Email = _email, Password = _password });
+            if (result is null)
+            {
+                _error = "ایمیل یا رمز عبور صحیح نیست.";
+                return;
+            }
+
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

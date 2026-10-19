@@ -7,9 +7,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Translators.Application.Contracts\Translators.Application.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.7" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Client" Version="9.0.7" />
     <PackageReference Include="MudBlazor" Version="8.0.0" />
+    <PackageReference Include="NSwag.ApiDescription.Client" Version="14.2.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Connected Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="OpenAPIs\swagger.json" />
   </ItemGroup>
 
 </Project>

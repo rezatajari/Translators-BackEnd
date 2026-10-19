@@ -63,7 +63,7 @@
   - `Translators.Tests/ApiTests/Users/RegisterTests.cs`
   - `Translators.Tests/ApiTests/Health/HealthTests.cs`
 
-## 3. API contract naming prefixes
+## 3. API contract naming prefixes and routing standards
 
 Use these prefixes for contracts when applicable:
 
@@ -77,6 +77,14 @@ Examples:
 - `CreateUserRequestContract`
 - `UpdateUserRequestContract`
 - `PaginatedUsersResponseContract`
+
+### General API standard for the whole system
+- Use action-style route names in PascalCase for entity operations, for example: `/api/users/GetById`, `/api/users/Paginated`, `/api/users/Lookup`.
+- `GetById` endpoints must use `GET`, and query-string parameters must be passed directly; never require a request body for single-row fetches by id.
+- `Paginated` and `Lookup` endpoints must use `POST` and accept a body contract; they are not `GET` endpoints.
+- Named operations should be explicit and deterministic so Swagger and client code remain predictable.
+- For single-entity fetches by id, the parameter name should be the primitive id name such as `guid` for `Guid` ids.
+- For all features, keep the route pattern as `/api/{FeatureName}/{ActionName}` and avoid unstructured route names.
 
 ## 4. PostgreSQL configuration standard
 

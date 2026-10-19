@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Translators.EntityFrameworkCore.Migrations
 {
     /// <inheritdoc />
-    public partial class AddRoleEntity : Migration
+    public partial class Add_RoleEntity : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -42,8 +42,8 @@ namespace Translators.EntityFrameworkCore.Migrations
                 columns: new[] { "Id", "CreatedAt", "Description", "IsSystemRole", "Name", "Permissions", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 9, 25, 7, 20, 56, 442, DateTimeKind.Utc).AddTicks(7421), "System administrator with full access.", true, "Admin", "*", null },
-                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 9, 25, 7, 20, 56, 442, DateTimeKind.Utc).AddTicks(7759), "Default registered user with read-only access.", true, "User", "GetByIdUserHandler,PaginatedUserHandler,LookupUserHandler", null }
+                    { new Guid("5a5425df-7563-408d-b2a0-3aefda45cdef"), new DateTime(2026, 9, 25, 0, 0, 0, 0, DateTimeKind.Utc), "Default registered user with read-only access.", true, "User", "GetByIdUserHandler,PaginatedUserHandler,LookupUserHandler", null },
+                    { new Guid("d5c5a1f4-8254-4c1e-811d-854d2eb4b831"), new DateTime(2026, 9, 25, 0, 0, 0, 0, DateTimeKind.Utc), "System administrator with full access.", true, "Admin", "*", null }
                 });
 
             migrationBuilder.CreateIndex(

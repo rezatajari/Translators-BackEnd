@@ -17,8 +17,13 @@ public class GetByIdUserApi : Endpoint<GetByIdUserRequestContract, GetByIdUserRe
 
     public override void Configure()
     {
-        Get("/api/users/{UserId}");
+        Get("/api/users/GetById");
         AllowAnonymous();
+        Summary(s =>
+        {
+            s.Summary = "Get a user by id";
+            s.Description = "Fetches a single user from the database using a GUID query parameter named guid.";
+        });
     }
 
     public override async Task HandleAsync(GetByIdUserRequestContract req, CancellationToken ct)
@@ -26,7 +31,7 @@ public class GetByIdUserApi : Endpoint<GetByIdUserRequestContract, GetByIdUserRe
         try
         {
             var handler = new GetByIdUserHandler(_context);
-            var result = await handler.HandleAsync(req.UserId, ct);
+            var result = await handler.HandleAsync(req.Guid, ct);
             await SendOkAsync(result, ct);
         }
         catch (InvalidOperationException ex)

@@ -2,7 +2,7 @@ namespace Translators.Application.Contracts.Users;
 
 public record GetByIdUserRequestContract
 {
-    public Guid UserId { get; init; }
+    public Guid Guid { get; init; }
 }
 
 public record GetByIdUserResponseContract
