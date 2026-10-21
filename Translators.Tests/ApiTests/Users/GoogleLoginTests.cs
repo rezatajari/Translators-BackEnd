@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿
+using Microsoft.EntityFrameworkCore;
 using Translators.Application.Contracts.Security;
 using Translators.Application.Security;
 using Translators.Application.Users;
+using Translators.Domain.Users;
 using Translators.EntityFrameworkCore.DbContexts;
 
 namespace Translators.Tests.ApiTests.Users;
@@ -39,6 +41,60 @@ public class GoogleLoginTests
 
         Assert.Equal(user.Id, result.UserId);
         Assert.Equal(user.Email, result.Email);
+        Assert.False(string.IsNullOrWhiteSpace(result.Token));
+    }
+    
+    
+    [Fact]
+    public async Task GoogleLogin_WithExistingGoogleUser_ReturnsSameUserWithoutCreatingDuplicate()
+    {
+        // Arrange
+        await using var context = CreateContext();
+
+        var role = new RoleEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = RoleNames.User,
+            Description = "Default registered user role.",
+            Permissions = "GetByIdUserHandler,PaginatedUserHandler,LookupUserHandler",
+            IsSystemRole = true
+        };
+
+        var existingUser = new UserEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = "Google User",
+            Email = "google@example.com",
+            GoogleSubjectId = "google-subject-123",
+            PasswordHash = string.Empty,
+            RoleId = role.Id,
+            Role = role
+        };
+
+        context.Roles.Add(role);
+        context.Users.Add(existingUser);
+        await context.SaveChangesAsync();
+
+        var handler = new GoogleLoginHandler(
+            context,
+            CreateJwtTokenService());
+
+        var googleIdentity = new GoogleIdentity
+        {
+            SubjectId = "google-subject-123",
+            Email = "google@example.com",
+            Name = "Google User"
+        };
+
+        // Act
+        var result = await handler.HandleAsync(googleIdentity);
+
+        // Assert
+        var users = await context.Users.ToListAsync();
+
+        Assert.Single(users);
+        Assert.Equal(existingUser.Id, result.UserId);
+        Assert.Equal(existingUser.Email, result.Email);
         Assert.False(string.IsNullOrWhiteSpace(result.Token));
     }
 
