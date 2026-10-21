@@ -91,6 +91,12 @@ public class TranslatorDbContext : DbContext
 
             entity.Property(x => x.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.Property(x => x.GoogleSubjectId)
+                .HasMaxLength(255);
+
+            entity.HasIndex(x => x.GoogleSubjectId)
+                .IsUnique();
         });
     }
 }
