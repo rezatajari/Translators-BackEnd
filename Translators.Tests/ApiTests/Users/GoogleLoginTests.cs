@@ -97,6 +97,56 @@ public class GoogleLoginTests
         Assert.Equal(existingUser.Email, result.Email);
         Assert.False(string.IsNullOrWhiteSpace(result.Token));
     }
+    
+    
+    [Fact]
+    public async Task GoogleLogin_WithEmailAlreadyUsedByNonGoogleUser_ThrowsAndDoesNotCreateDuplicate()
+    {
+        await using var context = CreateContext();
+
+        var role = new RoleEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = RoleNames.User,
+            Description = "Default registered user role.",
+            Permissions = "GetByIdUserHandler,PaginatedUserHandler,LookupUserHandler",
+            IsSystemRole = true
+        };
+
+        var existingUser = new UserEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = "Existing User",
+            Email = "existing@example.com",
+            PasswordHash = "existing-password-hash",
+            RoleId = role.Id,
+            Role = role
+        };
+
+        context.Roles.Add(role);
+        context.Users.Add(existingUser);
+        await context.SaveChangesAsync();
+
+        var handler = new GoogleLoginHandler(
+            context,
+            CreateJwtTokenService());
+
+        var googleIdentity = new GoogleIdentity
+        {
+            SubjectId = "google-subject-456",
+            Email = "existing@example.com",
+            Name = "Google User"
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => handler.HandleAsync(googleIdentity));
+
+        var users = await context.Users.ToListAsync();
+
+        Assert.Single(users);
+        Assert.Equal(existingUser.Id, users[0].Id);
+    }
+
 
     private static TranslatorDbContext CreateContext()
     {
