@@ -1,12 +1,12 @@
 ﻿using FastEndpoints;
 using Microsoft.AspNetCore.Http;
-using Translators.Application.Contracts.Security;
+using Translators.Application.Authentication.GoogleLogin;
+using Translators.Application.Contracts.Authentication.GoogleLogin;
 using Translators.Application.Contracts.Users;
 using Translators.Application.Security;
-using Translators.Application.Users;
 using Translators.EntityFrameworkCore.DbContexts;
 
-namespace Translators.HttpApi.Users;
+namespace Translators.HttpApi.Authentication.GoogleLogin;
 
 public class GoogleLoginApi : Endpoint<GoogleIdentity, LoginUserResponseContract>
 {

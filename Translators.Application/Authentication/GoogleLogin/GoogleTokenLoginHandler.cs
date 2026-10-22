@@ -1,7 +1,7 @@
 ﻿using Translators.Application.Contracts.Users;
 using Translators.Application.Security;
 
-namespace Translators.Application.Users;
+namespace Translators.Application.Authentication.GoogleLogin;
 
 public class GoogleTokenLoginHandler
 {

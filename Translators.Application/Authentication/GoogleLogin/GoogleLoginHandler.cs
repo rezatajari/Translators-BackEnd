@@ -1,12 +1,12 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Translators.Application.Contracts.Authentication.GoogleLogin;
 using Translators.Application.Contracts.Security;
 using Translators.Application.Contracts.Users;
 using Translators.Application.Security;
 using Translators.Domain.Users;
 using Translators.EntityFrameworkCore.DbContexts;
 
-namespace Translators.Application.Users;
+namespace Translators.Application.Authentication.GoogleLogin;
 
 public class GoogleLoginHandler
 {

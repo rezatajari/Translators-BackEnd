@@ -1,6 +1,7 @@
-﻿using Translators.Application.Contracts.Security;
+﻿using Translators.Application.Contracts.Authentication.GoogleLogin;
+using Translators.Application.Contracts.Security;
 
-namespace Translators.Application.Security;
+namespace Translators.Application.Authentication.GoogleLogin;
 
 public interface IGoogleTokenValidator
 {

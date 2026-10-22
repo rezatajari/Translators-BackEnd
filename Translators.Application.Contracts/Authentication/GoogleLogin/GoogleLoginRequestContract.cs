@@ -1,4 +1,4 @@
-﻿namespace Translators.Application.Contracts.Users;
+﻿namespace Translators.Application.Contracts.Authentication.GoogleLogin;
 
 public record GoogleLoginRequestContract
 {

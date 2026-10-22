@@ -1,4 +1,4 @@
-﻿namespace Translators.Application.Contracts.Security;
+﻿namespace Translators.Application.Contracts.Authentication.GoogleLogin;
 
 public record GoogleIdentity
 {

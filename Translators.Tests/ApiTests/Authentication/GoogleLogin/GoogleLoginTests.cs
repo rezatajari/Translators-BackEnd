@@ -1,12 +1,13 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Translators.Application.Authentication.GoogleLogin;
+using Translators.Application.Contracts.Authentication.GoogleLogin;
 using Translators.Application.Contracts.Security;
 using Translators.Application.Security;
 using Translators.Application.Users;
 using Translators.Domain.Users;
 using Translators.EntityFrameworkCore.DbContexts;
 
-namespace Translators.Tests.ApiTests.Users;
+namespace Translators.Tests.ApiTests.Authentication.GoogleLogin;
 
 public class GoogleLoginTests
 {

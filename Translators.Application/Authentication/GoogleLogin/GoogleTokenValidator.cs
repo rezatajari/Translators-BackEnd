@@ -1,4 +1,5 @@
 ﻿using Google.Apis.Auth;
+using Translators.Application.Contracts.Authentication.GoogleLogin;
 using Translators.Application.Contracts.Security;
 using Translators.Application.Security;
 
