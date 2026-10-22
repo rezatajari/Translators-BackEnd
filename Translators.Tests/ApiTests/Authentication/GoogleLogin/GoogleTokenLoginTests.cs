@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Translators.Application.Authentication.GoogleLogin;
 using Translators.Application.Contracts.Security;
 using Translators.Application.Security;
 using Translators.Application.Users;
@@ -69,15 +70,29 @@ public class GoogleTokenLoginTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.HandleAsync(string.Empty));
 
+        Assert.Equal(0, validator.CallCount);
         Assert.Equal(0, await context.Users.CountAsync());
+    }
+    
+    [Fact]
+    public async Task InvalidGoogleToken_ShouldBeRejected()
+    {
+        var validator = new GoogleTokenValidator("test-client-id");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => validator.ValidateAsync("invalid-token"));
     }
 
     private sealed class FakeGoogleTokenValidator : IGoogleTokenValidator
     {
+        public int CallCount { get; private set; }
+
         public Task<GoogleIdentity> ValidateAsync(
             string idToken,
             CancellationToken cancellationToken = default)
         {
+            CallCount++;
+
             throw new UnauthorizedAccessException("Invalid Google token.");
         }
     }
