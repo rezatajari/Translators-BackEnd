@@ -81,10 +81,62 @@ public class GoogleTokenLoginTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => validator.ValidateAsync("invalid-token"));
     }
+    
+    [Fact]
+    public async Task ValidGoogleIdentity_ShouldCreateUserAndReturnResponse()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<TranslatorDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new TranslatorDbContext(options);
+
+        var identity = new GoogleIdentity
+        {
+            SubjectId = "google-subject-123",
+            Email = "test@example.com",
+            Name = "Test User"
+        };
+
+        var validator = new FakeGoogleTokenValidator(identity);
+
+        var jwtService = new JwtTokenService(new JwtOptions
+        {
+            Issuer = "TranslatorsTests",
+            Audience = "TranslatorsTests",
+            SigningKey = "TestSigningKey_MustBeAtLeast32Chars!",
+            ExpirationMinutes = 60
+        });
+
+        var loginHandler = new GoogleLoginHandler(context, jwtService);
+        var handler = new GoogleTokenLoginHandler(validator, loginHandler);
+
+        // Act
+        var response = await handler.HandleAsync("valid-test-token");
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.Equal(1, validator.CallCount);
+
+        var user = await context.Users
+            .SingleOrDefaultAsync(u => u.GoogleSubjectId == identity.SubjectId);
+
+        Assert.NotNull(user);
+        Assert.Equal(identity.Email, user.Email);
+        Assert.Equal(identity.Name, user.Name);
+    }
 
     private sealed class FakeGoogleTokenValidator : IGoogleTokenValidator
     {
+        private readonly GoogleIdentity? _identity;
+
         public int CallCount { get; private set; }
+
+        public FakeGoogleTokenValidator(GoogleIdentity? identity = null)
+        {
+            _identity = identity;
+        }
 
         public Task<GoogleIdentity> ValidateAsync(
             string idToken,
@@ -92,7 +144,12 @@ public class GoogleTokenLoginTests
         {
             CallCount++;
 
-            throw new UnauthorizedAccessException("Invalid Google token.");
+            if (_identity is null)
+            {
+                throw new UnauthorizedAccessException("Invalid Google token.");
+            }
+
+            return Task.FromResult(_identity);
         }
     }
 }
