@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Translators.Application.Contracts.Authentication.GoogleLogin;
-using Translators.Application.Contracts.Security;
 using Translators.Application.Contracts.Users;
 using Translators.Application.Security;
 using Translators.Domain.Users;

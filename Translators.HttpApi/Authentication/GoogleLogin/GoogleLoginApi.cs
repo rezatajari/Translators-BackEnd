@@ -3,22 +3,17 @@ using Microsoft.AspNetCore.Http;
 using Translators.Application.Authentication.GoogleLogin;
 using Translators.Application.Contracts.Authentication.GoogleLogin;
 using Translators.Application.Contracts.Users;
-using Translators.Application.Security;
-using Translators.EntityFrameworkCore.DbContexts;
 
 namespace Translators.HttpApi.Authentication.GoogleLogin;
 
-public class GoogleLoginApi : Endpoint<GoogleIdentity, LoginUserResponseContract>
+public class GoogleLoginApi
+    : Endpoint<GoogleLoginRequestContract, LoginUserResponseContract>
 {
-    private readonly TranslatorDbContext _context;
-    private readonly JwtTokenService _jwtTokenService;
+    private readonly GoogleTokenLoginHandler _handler;
 
-    public GoogleLoginApi(
-        TranslatorDbContext context,
-        JwtTokenService jwtTokenService)
+    public GoogleLoginApi(GoogleTokenLoginHandler handler)
     {
-        _context = context;
-        _jwtTokenService = jwtTokenService;
+        _handler = handler;
     }
 
     public override void Configure()
@@ -29,29 +24,27 @@ public class GoogleLoginApi : Endpoint<GoogleIdentity, LoginUserResponseContract
         Summary(s =>
         {
             s.Summary = "Log in or register using Google";
-            s.Description = "Creates a user if needed and returns a JWT token.";
+            s.Description = "Validates a Google ID token, creates a user if needed, and returns a JWT token.";
         });
     }
 
     public override async Task HandleAsync(
-        GoogleIdentity req,
+        GoogleLoginRequestContract req,
         CancellationToken ct)
     {
         try
         {
-            var handler = new GoogleLoginHandler(
-                _context,
-                _jwtTokenService);
-
-            var result = await handler.HandleAsync(req, ct);
+            var result = await _handler.HandleAsync(req.IdToken, ct);
             await SendOkAsync(result, ct);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            await SendUnauthorizedAsync(ct);
         }
         catch (InvalidOperationException ex)
         {
-            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await HttpContext.Response.WriteAsJsonAsync(
-                new { message = ex.Message },
-                cancellationToken: ct);
+            AddError(ex.Message);
+            await SendErrorsAsync(StatusCodes.Status400BadRequest, ct);
         }
     }
 }

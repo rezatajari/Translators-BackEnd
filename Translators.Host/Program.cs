@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Translators.Application.Authentication.GoogleLogin;
 using Translators.Application.Contracts.Security;
 using Translators.Application.Security;
 using Translators.EntityFrameworkCore.DbContexts;
@@ -25,7 +26,23 @@ public partial class Program
 
         builder.Services.AddSingleton(jwtOptions);
         builder.Services.AddSingleton<JwtTokenService>();
+        
+        // google client setting
+        var googleClientId = builder.Configuration["Google:ClientId"];
 
+        if (string.IsNullOrWhiteSpace(googleClientId))
+        {
+            throw new InvalidOperationException(
+                "Google:ClientId must be configured.");
+        }
+
+        builder.Services.AddSingleton<IGoogleTokenValidator>(
+            _ => new GoogleTokenValidator(googleClientId));
+
+        builder.Services.AddScoped<GoogleLoginHandler>();
+        builder.Services.AddScoped<GoogleTokenLoginHandler>();
+        
+        
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
